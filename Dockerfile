@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Install system compilation tools and FFmpeg 7 development libraries
+# Install compilation tools and ffmpeg development libraries for the 'av' library
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
@@ -16,19 +16,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy dependency structures and install Python wheels
+# Copy dependency files and install them
 COPY requirements/ ./requirements/
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r ./requirements/_requirements.txt
 
-# Copy the rest of your repository code
+# Explicitly install Uvicorn to host the app over HTTP
+RUN pip install --no-cache-dir uvicorn
+
+# Copy the rest of the repository source code
 COPY . .
 
-# Install the CLI package needed to spin up the server
-RUN pip install --no-cache-dir inference-cli
+# Expose Render's expected port variable (Render defaults to 10000)
+ENV PORT=10000
+EXPOSE 10000
 
-# Expose Roboflow's default local inference server port
-EXPOSE 9001
-
-# Start the dev server
-CMD ["inference", "server", "start", "--dev"]
+# Start Roboflow Inference's internal FastAPI app directly via Uvicorn
+CMD ["uvicorn", "inference.enterprise.api_fastapi:app", "--host", "0.0.0.0", "--port", "10000"]
