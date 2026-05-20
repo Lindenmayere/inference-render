@@ -21,15 +21,18 @@ COPY requirements/ ./requirements/
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r ./requirements/_requirements.txt
 
-# Explicitly install Uvicorn to host the app over HTTP
+# Install Uvicorn explicitly to act as the web gateway
 RUN pip install --no-cache-dir uvicorn
 
 # Copy the rest of the repository source code
 COPY . .
 
-# Expose Render's expected port variable (Render defaults to 10000)
+# CRITICAL: Inform Python to look into the current root directory for module imports
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+# Expose Render's default routing port
 ENV PORT=10000
 EXPOSE 10000
 
 # Start Roboflow Inference's internal FastAPI app directly via Uvicorn
-CMD ["uvicorn", "inference.enterprise.api_fastapi:app", "--host", "0.0.0.0", "--port", "10000"]
+CMD ["uvicorn", "inference.core.api:app", "--host", "0.0.0.0", "--port", "10000"]
