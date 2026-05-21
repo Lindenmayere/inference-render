@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: inference
+    runtime: docker
+    repo: https://github.com/Lindenmayere/inference-render
+    # Direct Render to the exact CPU Dockerfile path
+    dockerfilePath: docker/dockerfiles/Dockerfile.onnx.cpu
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NUM_WORKERS
+        value: 1
+      - key: HOST
+        value: 0.0.0.0
