@@ -16,26 +16,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy requirements
+# Copy dependency files and install base + http server stacks
 COPY requirements/ ./requirements/
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r ./requirements/_requirements.txt -r ./requirements/core.txt
+    pip install --no-cache-dir -r ./requirements/_requirements.txt -r ./requirements/requirements.http.txt -r ./requirements/requirements.hosted.txt
 
-# Install Uvicorn
+# Install Uvicorn explicitly to act as the web gateway
 RUN pip install --no-cache-dir uvicorn
 
 # Copy the rest of the repository source code
 COPY . .
 
-# Set PYTHONPATH directly to /app so 'inference' can be parsed as a root module
+# Inform Python to look into the current root directory for module imports
 ENV PYTHONPATH=/app
 
 # Expose Render's default routing port
 ENV PORT=10000
 EXPOSE 10000
 
-# 3. Turn off the deprecated gaze model flag to silence the deprecation warning
+# Silence the gaze model deprecation error if needed
 ENV CORE_MODEL_GAZE_ENABLED=False
 
-# 4. Invoke Uvicorn using the top-level module syntax
+# Start Roboflow Inference's internal FastAPI app directly via Uvicorn
 CMD ["uvicorn", "inference.core.api:app", "--host", "0.0.0.0", "--port", "10000"]
