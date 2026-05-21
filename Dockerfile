@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Install compilation tools and ffmpeg development libraries for the 'av' library
+# Install compilation tools and ffmpeg development libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
@@ -16,23 +16,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy dependency files and install them
+# Copy requirements
 COPY requirements/ ./requirements/
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r ./requirements/_requirements.txt
+    pip install --no-cache-dir -r ./requirements/_requirements.txt -r ./requirements/core.txt
 
-# Install Uvicorn explicitly to act as the web gateway
+# Install Uvicorn
 RUN pip install --no-cache-dir uvicorn
 
 # Copy the rest of the repository source code
 COPY . .
 
-# CRITICAL: Inform Python to look into the current root directory for module imports
-ENV PYTHONPATH=/app:$PYTHONPATH
+# Set PYTHONPATH directly to /app so 'inference' can be parsed as a root module
+ENV PYTHONPATH=/app
 
 # Expose Render's default routing port
 ENV PORT=10000
 EXPOSE 10000
 
-# Start Roboflow Inference's internal FastAPI app directly via Uvicorn
+# 3. Turn off the deprecated gaze model flag to silence the deprecation warning
+ENV CORE_MODEL_GAZE_ENABLED=False
+
+# 4. Invoke Uvicorn using the top-level module syntax
 CMD ["uvicorn", "inference.core.api:app", "--host", "0.0.0.0", "--port", "10000"]
